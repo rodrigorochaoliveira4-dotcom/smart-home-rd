@@ -3,326 +3,502 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#101820">
-<title>Smart Home RD</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Home RD 2.0</title>
 <style>
+:root {
+  --bg:#10151d; --panel:#19212c; --line:#344253;
+  --text:#edf3fa; --muted:#9eacbd; --accent:#ff9d36;
+}
 *{box-sizing:border-box}
-body{
- margin:0;background:#101820;color:#e8edf2;
- font-family:Arial,sans-serif
-}
-header{
- padding:17px;background:#17232e;
- border-bottom:1px solid #344452;
- display:flex;justify-content:space-between;
- align-items:center;gap:10px;flex-wrap:wrap
-}
-header h1{font-size:21px;margin:0;color:#fff}
-header small{color:#9aabb9}
-main{padding:14px;max-width:1200px;margin:auto}
-.toolbar{
- display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px
-}
-button,.filelabel{
- background:#263744;color:#fff;border:1px solid #405565;
- padding:11px 13px;border-radius:7px;
- font-size:14px;cursor:pointer
-}
-button.active{background:#e69a32;color:#151515;border-color:#e69a32}
-button:hover,.filelabel:hover{filter:brightness(1.2)}
-.workspace{
- display:grid;grid-template-columns:minmax(0,1fr) 230px;
- gap:13px
-}
-.canvasbox{
- background:#fff;border-radius:9px;overflow:hidden;
- border:2px solid #526474;min-width:0
-}
-svg{
- width:100%;height:auto;display:block;
- touch-action:none;background-color:#fff
-}
-.side{
- background:#17232e;border:1px solid #344452;
- border-radius:9px;padding:14px
-}
-.side h3{margin-top:0}
-.side p{font-size:13px;line-height:1.5;color:#b9c6d0}
-.status{color:#e8a13d;font-size:13px;margin-top:12px}
-input[type=file]{display:none}
-footer{color:#8495a3;font-size:12px;margin-top:15px}
-@media(max-width:700px){
- .workspace{grid-template-columns:1fr}
- .side{order:2}
- header h1{font-size:18px}
- button,.filelabel{padding:10px;font-size:13px}
+body{margin:0;background:var(--bg);color:var(--text);
+font-family:Arial,sans-serif}
+header{padding:16px;background:#151d28;border-bottom:1px solid var(--line)}
+header h1{margin:0;color:var(--accent);font-size:22px}
+header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:260px 1fr;gap:12px;padding:12px}
+aside,.workspace{background:var(--panel);border:1px solid var(--line);
+border-radius:10px;padding:12px;min-width:0}
+h3{font-size:14px;color:var(--accent);margin:12px 0 8px}
+.toolbar{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+button,select,input{font:inherit}
+button{background:#263445;color:var(--text);border:1px solid #43546a;
+border-radius:6px;padding:10px 7px;cursor:pointer}
+button:hover,button.active{border-color:var(--accent);background:#49331f}
+button:disabled{opacity:.4;cursor:not-allowed}
+.full{width:100%;margin-top:7px}
+.danger{color:#ff9999}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+.workspace{display:flex;flex-direction:column;gap:10px}
+.topbar{display:flex;justify-content:space-between;align-items:center;
+gap:8px;flex-wrap:wrap}
+.canvas-wrap{width:100%;overflow:auto;background:#111923;border-radius:8px}
+svg{display:block;width:100%;min-width:600px;height:auto;touch-action:none;
+background-color:#111923}
+.object{cursor:move}
+.object.selected{filter:drop-shadow(0 0 5px #ff9d36)}
+svg text{font-family:Arial,sans-serif;user-select:none}
+input,select{width:100%;background:#111923;color:white;border:1px solid var(--line);
+border-radius:6px;padding:9px;margin-top:5px}
+.field{margin:10px 0;font-size:12px;color:var(--muted)}
+.status{font-size:12px;color:var(--muted)}
+@media(max-width:800px){
+ main{grid-template-columns:1fr}
+ .toolbar{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
-
 <body>
 <header>
- <div>
-  <h1>⚡ SMART HOME RD</h1>
-  <small>Projeto de automação residencial</small>
- </div>
- <small>EDITOR DE PLANTA 2D</small>
+  <h1>SMART HOME RD <span style="font-size:12px">2.0</span></h1>
+  <p>Editor técnico de plantas e iluminação residencial</p>
 </header>
 
 <main>
- <div class="toolbar">
-  <button class="active" data-tool="wall">＋ Parede</button>
-  <button data-tool="light">💡 Lâmpada</button>
-  <button data-tool="room">T Cômodo</button>
-  <button data-tool="erase">⌫ Apagar</button>
-  <button id="undo">↶ Desfazer</button>
-  <button id="clear">Limpar planta</button>
-  <button id="export">↓ Exportar</button>
-  <label class="filelabel" for="importFile">↑ Importar</label>
-  <input id="importFile" type="file" accept=".json,application/json">
- </div>
-
- <div class="workspace">
-  <div class="canvasbox">
-   <svg id="plan" viewBox="0 0 1000 700"
-        xmlns="http://www.w3.org/2000/svg">
-    <defs>
-     <pattern id="smallGrid" width="20" height="20"
-              patternUnits="userSpaceOnUse">
-      <path d="M20 0H0V20" fill="none" stroke="#e7ebef" stroke-width="1"/>
-     </pattern>
-     <pattern id="bigGrid" width="100" height="100"
-              patternUnits="userSpaceOnUse">
-      <rect width="100" height="100" fill="url(#smallGrid)"/>
-      <path d="M100 0H0V100" fill="none" stroke="#cbd3da" stroke-width="1.4"/>
-     </pattern>
-    </defs>
-    <rect width="1000" height="700" fill="url(#bigGrid)"/>
-    <g id="elements"></g>
-    <g id="preview"></g>
-   </svg>
+<aside>
+  <h3>FERRAMENTAS</h3>
+  <div class="toolbar" id="tools">
+    <button data-tool="select" class="active">↖ Selecionar</button>
+    <button data-tool="wall">▰ Parede</button>
+    <button data-tool="light">💡 Lâmpada</button>
+    <button data-tool="room">T Cômodo</button>
+    <button data-tool="erase">⌫ Borracha</button>
   </div>
 
-  <aside class="side">
-   <h3>Ferramentas</h3>
-   <p><b>Parede:</b> toque e arraste para desenhar uma parede.</p>
-   <p><b>Lâmpada:</b> toque no local onde deseja colocar um ponto de luz.</p>
-   <p><b>Cômodo:</b> toque na planta e informe o nome do ambiente.</p>
-   <p><b>Apagar:</b> toque no elemento que deseja remover.</p>
-   <p><b>Selecionar:</b> toque em um elemento para selecioná-lo. Você poderá renomear textos.</p>
-   <hr>
-   <h3>Projeto</h3>
-   <p id="count">0 elementos na planta</p>
-   <p class="status" id="status">Pronto para desenhar.</p>
-   <hr>
-   <p><b>Importante:</b> esta versão é o editor da planta. O controle real das lâmpadas Tuya será desenvolvido na próxima etapa.</p>
-  </aside>
- </div>
+  <h3>PERFIL DE LED</h3>
+  <div class="toolbar">
+    <button data-tool="profile-line">━ Reto</button>
+    <button data-tool="profile-l">⌞ Em L</button>
+    <button data-tool="profile-u">∪ Em U</button>
+    <button data-tool="profile-custom">✎ Personalizado</button>
+  </div>
+  <button class="full" id="finishCustom" disabled>Finalizar perfil personalizado</button>
 
- <footer>
-  Smart Home RD • Planta salva automaticamente neste navegador.
-  Exporte uma cópia JSON para não perder seu projeto.
- </footer>
+  <h3>OUTROS MODELOS</h3>
+  <div class="toolbar">
+    <button data-tool="spot-round">● Spot redondo</button>
+    <button data-tool="spot-square">■ Spot quadrado</button>
+    <button data-tool="strip">━ Fita LED</button>
+    <button data-tool="panel-square">▣ Painel quadrado</button>
+    <button data-tool="panel-rect">▤ Painel retangular</button>
+    <button data-tool="pendant">♧ Pendente</button>
+  </div>
+
+  <h3>EDIÇÃO</h3>
+  <div class="toolbar">
+    <button id="undo">↶ Desfazer</button>
+    <button id="delete">Excluir seleção</button>
+    <button id="clear" class="danger">Limpar planta</button>
+  </div>
+
+  <h3>PROPRIEDADES</h3>
+  <div id="properties" class="note">Selecione um elemento para editar suas propriedades.</div>
+
+  <h3>ARQUIVO</h3>
+  <button class="full" id="export">⬇ Exportar planta JSON</button>
+  <button class="full" id="import">⬆ Importar planta JSON</button>
+  <input type="file" id="fileInput" accept=".json,application/json" hidden>
+
+  <p class="note">
+    A planta é salva automaticamente neste navegador.
+    Exporte o JSON para manter uma cópia de segurança.
+  </p>
+</aside>
+
+<section class="workspace">
+  <div class="topbar">
+    <strong>PLANTA BAIXA — ÁREA DE DESENHO</strong>
+    <span class="status" id="status">Pronto para desenhar</span>
+  </div>
+  <div class="canvas-wrap">
+    <svg id="plan" viewBox="0 0 1000 700"
+         xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#293646" stroke-width="1"/>
+        </pattern>
+      </defs>
+      <rect width="1000" height="700" fill="url(#grid)"/>
+      <g id="elements"></g>
+      <g id="preview"></g>
+    </svg>
+  </div>
+  <div class="status" id="help">
+    Selecione uma ferramenta para começar.
+  </div>
+</section>
 </main>
 
 <script>
-const svg=document.getElementById("plan");
-const layer=document.getElementById("elements");
-const preview=document.getElementById("preview");
-const statusText=document.getElementById("status");
-const countText=document.getElementById("count");
+const svg = document.getElementById("plan");
+const elementsGroup = document.getElementById("elements");
+const previewGroup = document.getElementById("preview");
+const statusEl = document.getElementById("status");
+const helpEl = document.getElementById("help");
+const properties = document.getElementById("properties");
 
-let items=[];
-let history=[];
-let tool="wall";
-let drawing=false;
-let start=null;
-let selected=null;
+let objects = [];
+let history = [];
+let selected = null;
+let tool = "select";
+let drawing = false;
+let start = null;
+let customPoints = [];
+let moving = null;
 
+const STORAGE = "smartHomeRD_v2";
+
+function uid(){
+  return Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+}
 function saveHistory(){
- history.push(JSON.stringify(items));
- if(history.length>40)history.shift();
+  history.push(JSON.stringify(objects));
+  if(history.length>40) history.shift();
 }
-function persist(){
- try{localStorage.setItem("smartHomeRD",JSON.stringify(items))}
- catch(e){statusText.textContent="Não foi possível salvar no navegador."}
+function save(){
+  localStorage.setItem(STORAGE,JSON.stringify(objects));
+  statusEl.textContent="Salvo automaticamente";
 }
-function update(){
- layer.innerHTML="";
- items.forEach((item,index)=>{
-  let el;
-  if(item.type==="wall"){
-   el=document.createElementNS("http://www.w3.org/2000/svg","line");
-   el.setAttribute("x1",item.x1);
-   el.setAttribute("y1",item.y1);
-   el.setAttribute("x2",item.x2);
-   el.setAttribute("y2",item.y2);
-   el.setAttribute("stroke","#17232e");
-   el.setAttribute("stroke-width","8");
-   el.setAttribute("stroke-linecap","square");
-  }
-  if(item.type==="light"){
-   el=document.createElementNS("http://www.w3.org/2000/svg","g");
-   const circle=document.createElementNS("http://www.w3.org/2000/svg","circle");
-   circle.setAttribute("cx",item.x);
-   circle.setAttribute("cy",item.y);
-   circle.setAttribute("r","17");
-   circle.setAttribute("fill","#fff4cf");
-   circle.setAttribute("stroke","#d68a19");
-   circle.setAttribute("stroke-width","3");
-   const text=document.createElementNS("http://www.w3.org/2000/svg","text");
-   text.setAttribute("x",item.x);
-   text.setAttribute("y",item.y+7);
-   text.setAttribute("text-anchor","middle");
-   text.setAttribute("font-size","20");
-   text.textContent="✦";
-   el.append(circle,text);
-  }
-  if(item.type==="room"){
-   el=document.createElementNS("http://www.w3.org/2000/svg","text");
-   el.setAttribute("x",item.x);
-   el.setAttribute("y",item.y);
-   el.setAttribute("font-size","23");
-   el.setAttribute("font-weight","bold");
-   el.setAttribute("text-anchor","middle");
-   el.setAttribute("fill","#344452");
-   el.textContent=item.text;
-  }
-  el.setAttribute("data-index",index);
-  el.style.cursor="pointer";
-  if(selected===index){
-   el.setAttribute("opacity",".65");
-  }
-  layer.appendChild(el);
- });
- countText.textContent=items.length+" elementos na planta";
- persist();
-}
+function snap(v){return Math.round(v/10)*10;}
 function point(e){
- const p=svg.createSVGPoint();
- p.x=e.clientX;p.y=e.clientY;
- const matrix=svg.getScreenCTM().inverse();
- const pos=p.matrixTransform(matrix);
- return {
-  x:Math.max(0,Math.min(1000,Math.round(pos.x/20)*20)),
-  y:Math.max(0,Math.min(700,Math.round(pos.y/20)*20))
- };
+  const p=svg.createSVGPoint();
+  p.x=e.clientX;p.y=e.clientY;
+  const m=svg.getScreenCTM().inverse();
+  const q=p.matrixTransform(m);
+  return {x:snap(q.x),y:snap(q.y)};
 }
-function setTool(name){
- tool=name;
- document.querySelectorAll("[data-tool]").forEach(b=>{
-  b.classList.toggle("active",b.dataset.tool===name);
- });
- selected=null;
- statusText.textContent="Ferramenta: "+name;
+function esc(s){
+  return String(s).replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
 }
-document.querySelectorAll("[data-tool]").forEach(b=>{
- b.addEventListener("click",()=>setTool(b.dataset.tool));
-});
+function add(obj){
+  saveHistory();
+  objects.push({id:uid(),...obj});
+  selected=objects[objects.length-1].id;
+  save();render();
+}
+function find(id){return objects.find(o=>o.id===id);}
+function removeSelected(){
+  if(!selected)return;
+  saveHistory();
+  objects=objects.filter(o=>o.id!==selected);
+  selected=null;save();render();
+}
+function undo(){
+  if(!history.length)return;
+  objects=JSON.parse(history.pop());
+  selected=null;save();render();
+}
+function setTool(t){
+  if(tool==="profile-custom" && customPoints.length){
+    customPoints=[];
+    previewGroup.innerHTML="";
+  }
+  tool=t;
+  document.querySelectorAll("[data-tool]").forEach(b=>
+    b.classList.toggle("active",b.dataset.tool===t));
+  document.getElementById("finishCustom").disabled=t!=="profile-custom";
+  const descriptions={
+    select:"Clique em um elemento para selecioná-lo e arrastá-lo.",
+    wall:"Arraste para desenhar uma parede.",
+    light:"Clique para posicionar uma lâmpada.",
+    room:"Clique para adicionar o nome de um cômodo.",
+    erase:"Clique no elemento que deseja apagar.",
+    "profile-line":"Arraste para desenhar um perfil de LED reto.",
+    "profile-l":"Arraste para definir o tamanho de um perfil em L.",
+    "profile-u":"Arraste para definir o tamanho de um perfil em U.",
+    "profile-custom":"Clique nos pontos do perfil e depois em Finalizar.",
+    "spot-round":"Clique para colocar um spot redondo.",
+    "spot-square":"Clique para colocar um spot quadrado.",
+    strip:"Arraste para desenhar uma fita LED.",
+    "panel-square":"Clique para colocar um painel quadrado.",
+    "panel-rect":"Clique para colocar um painel retangular.",
+    pendant:"Clique para colocar um pendente."
+  };
+  helpEl.textContent=descriptions[t]||"";
+}
+document.querySelectorAll("[data-tool]").forEach(b=>
+  b.addEventListener("click",()=>setTool(b.dataset.tool)));
+
+function line(x1,y1,x2,y2,color,width){
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+  stroke="${color}" stroke-width="${width}" stroke-linecap="round"/>`;
+}
+function renderObject(o){
+  const active=o.id===selected;
+  const color=active?"#ff9d36":(o.color||"#f5c46b");
+  let content="";
+  switch(o.type){
+    case "wall":
+      content=line(o.x1,o.y1,o.x2,o.y2,color,8);
+      break;
+    case "light":
+      content=`<circle cx="${o.x}" cy="${o.y}" r="10" fill="#ffdf70"
+      stroke="${color}" stroke-width="2"/>
+      <path d="M ${o.x-5} ${o.y+12} h10 M ${o.x-4} ${o.y+15} h8"
+      stroke="${color}" stroke-width="2"/>`;
+      break;
+    case "room":
+      content=`<text x="${o.x}" y="${o.y}" fill="${color}"
+      font-size="19" text-anchor="middle">${esc(o.label)}</text>`;
+      break;
+    case "profile":
+    case "strip":
+      content=`<polyline points="${o.points.map(p=>p.x+","+p.y).join(" ")}"
+      fill="none" stroke="${color}" stroke-width="${o.width||5}"
+      stroke-linecap="round" stroke-linejoin="round"/>`;
+      if(o.type==="profile"){
+        content+=`<polyline points="${o.points.map(p=>p.x+","+p.y).join(" ")}"
+        fill="none" stroke="#fff4bd" stroke-width="1.3"
+        stroke-linecap="round" stroke-linejoin="round"/>`;
+      }
+      break;
+    case "spot-round":
+      content=`<circle cx="${o.x}" cy="${o.y}" r="${o.size||9}"
+      fill="#ffe7a1" stroke="${color}" stroke-width="2"/>`;
+      break;
+    case "spot-square":
+      content=`<rect x="${o.x-9}" y="${o.y-9}" width="18" height="18"
+      rx="2" fill="#ffe7a1" stroke="${color}" stroke-width="2"/>`;
+      break;
+    case "panel-square":
+    case "panel-rect":
+      content=`<rect x="${o.x-o.w/2}" y="${o.y-o.h/2}"
+      width="${o.w}" height="${o.h}" rx="3"
+      fill="#ffe7a1" fill-opacity=".85" stroke="${color}" stroke-width="2"/>
+      <path d="M ${o.x-o.w/2+5} ${o.y} H ${o.x+o.w/2-5}"
+      stroke="#fff" stroke-width="1"/>`;
+      break;
+    case "pendant":
+      content=`<path d="M ${o.x} ${o.y-28} V ${o.y-8}"
+      stroke="${color}" stroke-width="2"/>
+      <path d="M ${o.x-13} ${o.y-8} L ${o.x} ${o.y+8}
+      L ${o.x+13} ${o.y-8} Z" fill="#ffe7a1"
+      stroke="${color}" stroke-width="2"/>`;
+      break;
+  }
+  return `<g class="object ${active?"selected":""}" data-id="${o.id}">
+  ${content}
+  <rect x="${bounds(o).x-8}" y="${bounds(o).y-8}"
+  width="${bounds(o).w+16}" height="${bounds(o).h+16}"
+  fill="transparent" stroke="transparent" pointer-events="all"/>
+  </g>`;
+}
+function bounds(o){
+  if(o.points){
+    const xs=o.points.map(p=>p.x),ys=o.points.map(p=>p.y);
+    return {x:Math.min(...xs),y:Math.min(...ys),
+      w:Math.max(1,Math.max(...xs)-Math.min(...xs)),
+      h:Math.max(1,Math.max(...ys)-Math.min(...ys))};
+  }
+  if(o.x1!==undefined){
+    return {x:Math.min(o.x1,o.x2),y:Math.min(o.y1,o.y2),
+      w:Math.max(1,Math.abs(o.x2-o.x1)),h:Math.max(1,Math.abs(o.y2-o.y1))};
+  }
+  if(o.w!==undefined)return {x:o.x-o.w/2,y:o.y-o.h/2,w:o.w,h:o.h};
+  return {x:o.x-14,y:o.y-30,w:28,h:45};
+}
+function render(){
+  elementsGroup.innerHTML=objects.map(renderObject).join("");
+  renderProperties();
+}
+function renderProperties(){
+  const o=find(selected);
+  if(!o){
+    properties.textContent="Selecione um elemento para editar suas propriedades.";
+    return;
+  }
+  let html=`<div class="field">Tipo: <strong>${esc(o.type)}</strong></div>`;
+  if(o.label!==undefined){
+    html+=`<div class="field">Nome
+    <input id="propLabel" value="${esc(o.label)}"></div>`;
+  }
+  if(o.points){
+    html+=`<div class="field">Espessura (px)
+    <input id="propWidth" type="number" min="1" max="30" value="${o.width||5}"></div>`;
+  }
+  if(o.w!==undefined){
+    html+=`<div class="field">Largura
+    <input id="propW" type="number" min="10" max="300" value="${o.w}"></div>
+    <div class="field">Altura
+    <input id="propH" type="number" min="10" max="300" value="${o.h}"></div>`;
+  }
+  if(o.size!==undefined){
+    html+=`<div class="field">Tamanho
+    <input id="propSize" type="number" min="3" max="30" value="${o.size}"></div>`;
+  }
+  html+=`<button class="full" id="applyProps">Aplicar alterações</button>`;
+  properties.innerHTML=html;
+  document.getElementById("applyProps").onclick=()=>{
+    saveHistory();
+    const label=document.getElementById("propLabel");
+    const width=document.getElementById("propWidth");
+    const w=document.getElementById("propW");
+    const h=document.getElementById("propH");
+    const size=document.getElementById("propSize");
+    if(label)o.label=label.value;
+    if(width)o.width=Number(width.value);
+    if(w)o.w=Math.max(10,Number(w.value));
+    if(h)o.h=Math.max(10,Number(h.value));
+    if(size)o.size=Math.max(3,Number(size.value));
+    save();render();
+  };
+}
+function createProfile(t,a,b){
+  let pts;
+  const x1=a.x,y1=a.y,x2=b.x,y2=b.y;
+  if(t==="profile-line")pts=[a,b];
+  if(t==="profile-l")pts=[a,{x:x2,y:y1},b];
+  if(t==="profile-u")pts=[a,{x:x1,y:y2},{x:x2,y:y2},b];
+  if(t==="strip")pts=[a,b];
+  add({type:t==="strip"?"strip":"profile",shape:t,points:pts,width:t==="strip"?7:5});
+}
+function finishCustom(){
+  if(customPoints.length<2){
+    alert("Adicione pelo menos dois pontos.");
+    return;
+  }
+  add({type:"profile",shape:"custom",points:[...customPoints],width:5});
+  customPoints=[];
+  previewGroup.innerHTML="";
+}
+document.getElementById("finishCustom").onclick=finishCustom;
+
+function place(t,p){
+  if(t==="wall")return;
+  if(t==="light")return add({type:"light",x:p.x,y:p.y});
+  if(t==="spot-round")return add({type:t,x:p.x,y:p.y,size:9});
+  if(t==="spot-square")return add({type:t,x:p.x,y:p.y});
+  if(t==="panel-square")return add({type:t,x:p.x,y:p.y,w:40,h:40});
+  if(t==="panel-rect")return add({type:t,x:p.x,y:p.y,w:70,h:35});
+  if(t==="pendant")return add({type:t,x:p.x,y:p.y});
+  if(t==="room"){
+    const label=prompt("Nome do cômodo:");
+    if(label&&label.trim())add({type:"room",x:p.x,y:p.y,label:label.trim()});
+  }
+}
 
 svg.addEventListener("pointerdown",e=>{
- const p=point(e);
- const target=e.target.closest("[data-index]");
- if(target){
-  const index=Number(target.getAttribute("data-index"));
-  if(tool==="erase"){
-   saveHistory();items.splice(index,1);selected=null;update();
-   statusText.textContent="Elemento apagado.";
-   return;
-  }
-  if(tool!=="wall"&&tool!=="light"&&tool!=="room"){
-   selected=index;
-   update();
-   if(items[index].type==="room"){
-    const name=prompt("Novo nome do cômodo:",items[index].text);
-    if(name!==null&&name.trim()){
-     saveHistory();items[index].text=name.trim();update();
+  if(e.target.closest(".object")){
+    const id=e.target.closest(".object").dataset.id;
+    if(tool==="erase"){
+      saveHistory();objects=objects.filter(o=>o.id!==id);
+      selected=null;save();render();return;
     }
-   }
-   return;
+    if(tool==="select"){
+      selected=id;
+      moving={id,origin:point(e),original:JSON.parse(JSON.stringify(find(id)))};
+      render();return;
+    }
   }
- }
- if(tool==="wall"){
-  drawing=true;start=p;
-  preview.innerHTML="";
-  svg.setPointerCapture(e.pointerId);
- }
- if(tool==="light"){
-  saveHistory();
-  items.push({type:"light",x:p.x,y:p.y});
-  update();statusText.textContent="Lâmpada adicionada.";
- }
- if(tool==="room"){
-  const name=prompt("Nome do cômodo:");
-  if(name&&name.trim()){
-   saveHistory();
-   items.push({type:"room",x:p.x,y:p.y,text:name.trim()});
-   update();statusText.textContent="Cômodo adicionado.";
+  const p=point(e);
+  if(tool==="select") {selected=null;render();return;}
+  if(tool==="erase")return;
+  if(tool==="profile-custom"){
+    customPoints.push(p);
+    previewGroup.innerHTML=`<polyline points="${customPoints.map(q=>q.x+","+q.y).join(" ")}"
+    fill="none" stroke="#ff9d36" stroke-width="5" stroke-dasharray="5 4"/>`;
+    return;
   }
- }
+  if(["wall","profile-line","profile-l","profile-u","strip"].includes(tool)){
+    drawing=true;start=p;
+    previewGroup.innerHTML="";
+    svg.setPointerCapture(e.pointerId);
+    return;
+  }
+  place(tool,p);
 });
-
 svg.addEventListener("pointermove",e=>{
- if(!drawing||!start)return;
- const p=point(e);
- preview.innerHTML=
-  `<line x1="${start.x}" y1="${start.y}" x2="${p.x}" y2="${p.y}" stroke="#e69a32" stroke-width="8" stroke-linecap="square"/>`;
+  const p=point(e);
+  if(moving){
+    const o=find(moving.id);
+    const dx=p.x-moving.origin.x,dy=p.y-moving.origin.y;
+    const original=moving.original;
+    if(original.points){
+      o.points=original.points.map(q=>({x:q.x+dx,y:q.y+dy}));
+    }else if(original.x1!==undefined){
+      o.x1=original.x1+dx;o.x2=original.x2+dx;
+      o.y1=original.y1+dy;o.y2=original.y2+dy;
+    }else{
+      o.x=original.x+dx;o.y=original.y+dy;
+    }
+    render();
+    return;
+  }
+  if(!drawing||!start)return;
+  const x1=start.x,y1=start.y,x2=p.x,y2=p.y;
+  let preview="";
+  if(tool==="wall")preview=line(x1,y1,x2,y2,"#ff9d36",8);
+  else if(tool==="profile-line"||tool==="strip")
+    preview=line(x1,y1,x2,y2,"#ffe7a1",tool==="strip"?7:5);
+  else if(tool==="profile-l")
+    preview=`<polyline points="${x1},${y1} ${x2},${y1} ${x2},${y2}"
+    fill="none" stroke="#ffe7a1" stroke-width="5"/>`;
+  else if(tool==="profile-u")
+    preview=`<polyline points="${x1},${y1} ${x1},${y2} ${x2},${y2} ${x2},${y1}"
+    fill="none" stroke="#ffe7a1" stroke-width="5"/>`;
+  previewGroup.innerHTML=preview;
 });
 svg.addEventListener("pointerup",e=>{
- if(!drawing||!start)return;
- const p=point(e);
- drawing=false;
- preview.innerHTML="";
- if(start.x!==p.x||start.y!==p.y){
-  saveHistory();
-  items.push({type:"wall",x1:start.x,y1:start.y,x2:p.x,y2:p.y});
-  update();statusText.textContent="Parede desenhada.";
- }
- start=null;
+  if(moving){
+    const moved=moving;
+    moving=null;
+    if(find(moved.id)){
+      saveHistory();save();render();
+    }
+    return;
+  }
+  if(!drawing)return;
+  drawing=false;
+  const a=start,b=point(e);
+  start=null;previewGroup.innerHTML="";
+  if(a.x===b.x&&a.y===b.y)return;
+  if(tool==="wall")add({type:"wall",x1:a.x,y1:a.y,x2:b.x,y2:b.y});
+  else createProfile(tool,a,b);
 });
-svg.addEventListener("pointercancel",()=>{
- drawing=false;start=null;preview.innerHTML="";
+svg.addEventListener("dblclick",e=>{
+  if(tool==="profile-custom")finishCustom();
 });
 
-document.getElementById("undo").onclick=()=>{
- if(history.length){
-  items=JSON.parse(history.pop());
-  selected=null;update();
-  statusText.textContent="Última ação desfeita.";
- }else statusText.textContent="Não há ações para desfazer.";
-};
+document.getElementById("undo").onclick=undo;
+document.getElementById("delete").onclick=removeSelected;
 document.getElementById("clear").onclick=()=>{
- if(!confirm("Deseja apagar toda a planta?"))return;
- saveHistory();items=[];selected=null;update();
- statusText.textContent="Planta limpa.";
+  if(!objects.length)return;
+  if(confirm("Tem certeza que deseja apagar toda a planta?")){
+    saveHistory();objects=[];selected=null;save();render();
+  }
 };
 document.getElementById("export").onclick=()=>{
- const data=JSON.stringify({app:"Smart Home RD",version:1,items},null,2);
- const blob=new Blob([data],{type:"application/json"});
- const url=URL.createObjectURL(blob);
- const a=document.createElement("a");
- a.href=url;a.download="smart-home-rd-projeto.json";
- a.click();URL.revokeObjectURL(url);
+  const blob=new Blob([JSON.stringify({version:2,objects},null,2)],
+    {type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="smart-home-rd-planta.json";a.click();
+  URL.revokeObjectURL(url);
 };
-document.getElementById("importFile").onchange=async e=>{
- const file=e.target.files[0];
- if(!file)return;
- try{
-  const data=JSON.parse(await file.text());
-  if(!Array.isArray(data.items))throw new Error("Arquivo inválido");
-  if(!confirm("Substituir a planta atual pelo projeto importado?"))return;
-  saveHistory();items=data.items;selected=null;update();
-  statusText.textContent="Projeto importado.";
- }catch(err){alert("Não foi possível importar este arquivo.")}
- e.target.value="";
+document.getElementById("import").onclick=()=>
+  document.getElementById("fileInput").click();
+document.getElementById("fileInput").onchange=async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    const imported=Array.isArray(data)?data:data.objects;
+    if(!Array.isArray(imported))throw new Error("Formato inválido");
+    if(!imported.every(o=>o&&typeof o.type==="string"))
+      throw new Error("Elementos inválidos");
+    saveHistory();objects=imported;selected=null;save();render();
+    alert("Planta importada com sucesso!");
+  }catch(err){alert("Não foi possível importar: "+err.message);}
+  e.target.value="";
 };
+
 try{
- const saved=localStorage.getItem("smartHomeRD");
- if(saved){items=JSON.parse(saved);if(!Array.isArray(items))items=[]}
-}catch(e){items=[]}
-update();
+  const stored=localStorage.getItem(STORAGE);
+  if(stored)objects=JSON.parse(stored);
+}catch(e){objects=[];}
+render();
 </script>
 </body>
 </html>
+
