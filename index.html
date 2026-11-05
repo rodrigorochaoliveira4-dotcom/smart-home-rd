@@ -3,211 +3,670 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Home RD 3.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101820">
+<title>Smart Home RD</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#101820;color:#fff}
-header{padding:14px 18px;background:#172633;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-header h2{margin:0;color:#ff9d22}
-main{display:grid;grid-template-columns:190px 1fr;min-height:calc(100vh - 60px)}
-aside{background:#172633;padding:12px;display:flex;flex-direction:column;gap:7px}
-button{border:0;border-radius:6px;padding:10px;background:#263b4d;color:white;cursor:pointer;text-align:left}
-button:hover,button.active{background:#e88716;color:#111}
-button.action{background:#e88716;color:#111;text-align:center;font-weight:bold}
-#workspace{padding:12px;min-width:0}
-#board{background:#fff;width:100%;height:calc(100vh - 100px);min-height:450px;border-radius:8px;touch-action:none}
-svg{display:block}
-.item{cursor:move}
-.item.selected{filter:drop-shadow(0 0 4px #f90)}
-#properties{background:#172633;padding:12px;margin-top:10px;border-radius:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-input,select{padding:8px;border-radius:5px;border:1px solid #777;max-width:150px}
-.small{font-size:12px;color:#b9c6d0}
-@media(max-width:650px){main{grid-template-columns:1fr}aside{display:grid;grid-template-columns:repeat(3,1fr)}#board{height:65vh}}
+body{margin:0;background:#101820;color:#e8edf2;font-family:Arial,sans-serif}
+header{background:#17232e;padding:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-bottom:1px solid #405565}
+h1{font-size:21px;margin:0}
+small,.muted{color:#9aabb9}
+main{max-width:1450px;margin:auto;padding:12px}
+nav,.tools{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+button,.filelabel{background:#263744;color:white;border:1px solid #405565;padding:10px 12px;border-radius:7px;cursor:pointer}
+button.active{background:#e69a32;color:#111}
+button:hover,.filelabel:hover{filter:brightness(1.2)}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:12px}
+.canvas{background:white;border:2px solid #526474;border-radius:8px;overflow:hidden}
+svg{width:100%;height:auto;display:block;touch-action:none}
+aside,.panel{background:#17232e;border:1px solid #344452;border-radius:8px;padding:13px}
+aside p,.hint{font-size:13px;line-height:1.5;color:#b9c6d0}
+.field{display:grid;gap:5px;margin:10px 0}
+.field label{font-size:12px;color:#b9c6d0}
+input,select{background:#101820;color:white;border:1px solid #405565;border-radius:6px;padding:10px;width:100%}
+input[type=file]{display:none}
+.status{color:#f0ad4e;font-size:13px;line-height:1.5}
+.panel{margin-top:12px}
+.devices{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.device{background:#202f3b;border:1px solid #405565;border-radius:8px;padding:12px}
+.device button{margin-top:8px}
+.badge{font-size:11px;background:#354958;padding:4px 8px;border-radius:15px}
+footer{font-size:12px;color:#8495a3;margin:15px 0}
+@media(max-width:760px){.workspace{grid-template-columns:1fr}h1{font-size:18px}}
 </style>
 </head>
 <body>
 <header>
-<h2>⚡ Smart Home RD 3.0</h2>
-<span class="small">Projeto elétrico residencial</span>
+ <div>
+  <h1>⚡ SMART HOME RD</h1>
+  <small>Projeto elétrico e automação residencial</small>
+ </div>
+ <small>VERSÃO 3.0</small>
 </header>
+
 <main>
-<aside>
-<button class="active" data-tool="select">↖ Selecionar / mover</button>
-<button data-tool="wall">▰ Parede</button>
-<button data-tool="door">🚪 Porta</button>
-<button data-tool="window">▤ Janela</button>
-<button data-tool="lamp">💡 Luminária</button>
-<button data-tool="switch">◉ Interruptor simples</button>
-<button data-tool="parallel">⇄ Paralelo</button>
-<button data-tool="intermediate">⇆ Intermediário</button>
-<button data-tool="smart">⌂ Inteligente</button>
-<button data-tool="label">T Texto / cômodo</button>
-<button data-tool="circuit">━ Ligação de circuito</button>
-<button data-tool="erase">⌫ Apagar</button>
-<hr>
-<button class="action" id="undo">↶ Desfazer</button>
-<button class="action" id="export">Salvar projeto JSON</button>
-<button class="action" id="import">Importar projeto JSON</button>
-<button class="action" id="clear">Limpar planta</button>
-<input type="file" id="file" accept=".json" hidden>
-<p class="small">Parede: clique e arraste.<br>Demais símbolos: clique no local desejado. Selecione um item para editar ou mover.</p>
-</aside>
-<section id="workspace">
-<svg id="board" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-<path d="M20 0H0V20" fill="none" stroke="#e5e5e5" stroke-width="1"/>
-</pattern>
-</defs>
-<rect width="1200" height="800" fill="url(#grid)"/>
-<g id="drawings"></g>
-</svg>
-<div id="properties">
-<strong>Propriedades:</strong>
-<span id="selectedName" class="small">Nenhum item selecionado</span>
-<label>Nome <input id="itemName" placeholder="Nome"></label>
-<label>Circuito <input id="itemCircuit" placeholder="Ex.: C1"></label>
-<button id="apply">Aplicar</button>
-<button id="delete">Excluir selecionado</button>
+<nav>
+ <button id="showPlan" class="active">📐 Planta elétrica</button>
+ <button id="showAuto">📱 Automação</button>
+</nav>
+
+<section id="planSection">
+<div class="tools">
+ <button data-tool="select" class="active">↖ Selecionar</button>
+ <button data-tool="wall">＋ Parede</button>
+ <button data-tool="door">🚪 Porta</button>
+ <button data-tool="window">▱ Janela</button>
+ <button data-tool="room">T Cômodo</button>
+ <button data-tool="spot">● Spot redondo</button>
+ <button data-tool="square">■ Spot quadrado</button>
+ <button data-tool="panel">▦ Painel</button>
+ <button data-tool="pendant">♢ Pendente</button>
+ <button data-tool="led">━ LED reto</button>
+ <button data-tool="ledL">⌞ LED em L</button>
+ <button data-tool="ledU">⊔ LED em U</button>
+ <button data-tool="erase">⌫ Apagar</button>
+ <button id="undo">↶ Desfazer</button>
+ <button id="clear">Limpar</button>
+ <button id="export">↓ Exportar</button>
+ <label class="filelabel" for="import">↑ Importar</label>
+ <input id="import" type="file" accept=".json">
+</div>
+
+<div class="workspace">
+ <div class="canvas">
+  <svg id="plan" viewBox="0 0 1000 700"
+       xmlns="http://www.w3.org/2000/svg">
+   <defs>
+    <pattern id="small" width="20" height="20" patternUnits="userSpaceOnUse">
+     <path d="M20 0H0V20" fill="none" stroke="#e8edf1"/>
+    </pattern>
+    <pattern id="large" width="100" height="100" patternUnits="userSpaceOnUse">
+     <rect width="100" height="100" fill="url(#small)"/>
+     <path d="M100 0H0V100" fill="none" stroke="#cbd3da" stroke-width="1.4"/>
+    </pattern>
+   </defs>
+   <rect width="1000" height="700" fill="url(#large)"/>
+   <g id="elements"></g>
+   <g id="preview"></g>
+  </svg>
+ </div>
+
+ <aside>
+  <h3>Propriedades</h3>
+  <p>Escala: <b>50 pixels = 1 metro</b>.</p>
+  <div class="field">
+   <label>Nome do objeto</label>
+   <input id="objectName" placeholder="Ex.: Sala, Spot 1">
+  </div>
+  <div class="field">
+   <label>Comprimento em metros</label>
+   <input id="objectLength" type="number" min="0.1" step="0.1">
+  </div>
+  <button id="apply">Aplicar alterações</button>
+  <hr>
+  <p id="count">0 elementos</p>
+  <p id="status" class="status">Pronto para desenhar.</p>
+  <p class="hint">
+   Arraste para desenhar paredes. Selecione objetos para movimentar.
+   Clique em um cômodo para editar seu nome.
+  </p>
+ </aside>
+</div>
+
+<div class="panel">
+ <b>Legenda elétrica</b>
+ <p class="hint">Parede • Porta • Janela • Spots • Painéis • Pendentes • Perfis de LED.</p>
 </div>
 </section>
+
+<section id="autoSection" hidden>
+ <div class="panel">
+  <h2>📱 Automação NovaDigital / Tuya</h2>
+  <p class="hint">
+   Configure o endereço do seu servidor seguro. As credenciais Tuya
+   devem ficar no servidor, nunca neste site público.
+  </p>
+  <div class="field">
+   <label>Endereço do backend</label>
+   <input id="apiUrl" placeholder="https://seu-servidor.com">
+  </div>
+  <button id="loadDevices">Conectar e carregar dispositivos</button>
+  <p id="connection" class="status">Aguardando configuração.</p>
+ </div>
+
+ <div class="panel">
+  <h3>Meus dispositivos</h3>
+  <div id="devices" class="devices">
+   <p class="hint">Conecte o backend para carregar seus interruptores.</p>
+  </div>
+ </div>
+
+ <div class="panel">
+  <h3>Como funciona a integração</h3>
+  <p class="hint">
+   1. Vincular a conta NovaDigital compatível ao projeto Tuya.
+   <br>2. Configurar a API Tuya no backend.
+   <br>3. Consultar os dispositivos autorizados.
+   <br>4. Enviar comandos de ligar e desligar pelo servidor.
+  </p>
+  <a href="https://developer.tuya.com/en/docs/cloud"
+     target="_blank" rel="noopener" style="color:#e69a32">
+     Documentação oficial Tuya Cloud
+  </a>
+ </div>
+</section>
+
+<footer>
+ Smart Home RD • Os projetos são salvos neste navegador.
+ Faça exportações JSON para manter cópias de segurança.
+</footer>
 </main>
+
 <script>
-const svg=document.getElementById('board');
-const layer=document.getElementById('drawings');
-let items=[],tool='select',selected=null,history=[],drawing=null,drag=null;
-const $=id=>document.getElementById(id);
+const svg=document.getElementById("plan");
+const layer=document.getElementById("elements");
+const preview=document.getElementById("preview");
+const statusEl=document.getElementById("status");
+
+let items=[];
+let history=[];
+let tool="select";
+let selected=null;
+let drawing=false;
+let start=null;
+let moving=null;
+let lastPoint=null;
+
+const SCALE=50;
+const NS="http://www.w3.org/2000/svg";
 
 function save(){
- localStorage.setItem('smartHomeRD_v3',JSON.stringify(items));
-}
-function snapshot(){
- history.push(JSON.stringify(items));
- if(history.length>40)history.shift();
-}
-function undo(){
- if(!history.length)return;
- items=JSON.parse(history.pop());selected=null;render();save();
-}
-function point(e){
- const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;
- return p.matrixTransform(svg.getScreenCTM().inverse());
-}
-function make(type,x,y,x2=x,y2=y){
- return {id:Date.now()+Math.random(),type,x,y,x2,y2,name:'',circuit:''};
-}
-function add(type,x,y,x2,y2){
- snapshot();const a=make(type,x,y,x2,y2);items.push(a);selected=a.id;render();save();
-}
-function render(){
- layer.innerHTML='';
- items.forEach(a=>{
-  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-  g.classList.add('item');if(a.id===selected)g.classList.add('selected');
-  g.dataset.id=a.id;
-  const line=(x1,y1,x2,y2,color,width=5)=>el('line',{x1,y1,x2,y2,stroke:color,'stroke-width':width,'stroke-linecap':'round'});
-  const circle=(cx,cy,r,stroke,fill='white')=>el('circle',{cx,cy,r,stroke,fill,'stroke-width':3});
-  const text=(x,y,t,size=15)=>{let z=el('text',{x,y,'font-size':size,fill:'#111','text-anchor':'middle'});z.textContent=t;g.append(z)};
-  if(a.type==='wall')g.append(line(a.x,a.y,a.x2,a.y2,'#222',8));
-  if(a.type==='door'){
-   g.append(line(a.x,a.y,a.x2,a.y2,'#a66b35',4));
-   const r=Math.hypot(a.x2-a.x,a.y2-a.y);
-   g.append(el('path',{d:`M ${a.x} ${a.y} A ${r} ${r} 0 0 1 ${a.x+r} ${a.y}`,fill:'none',stroke:'#a66b35','stroke-width':2}));
-  }
-  if(a.type==='window'){
-   g.append(line(a.x-20,a.y,a.x+20,a.y,'#168bd0',5));
-   g.append(line(a.x-20,a.y-5,a.x+20,a.y-5,'#168bd0',2));
-   g.append(line(a.x-20,a.y+5,a.x+20,a.y+5,'#168bd0',2));
-  }
-  if(a.type==='lamp'){
-   g.append(circle(a.x,a.y,14,'#e5a000','#fff4c4'));text(a.x,a.y+5,'✦',15);
-  }
-  if(['switch','parallel','intermediate','smart'].includes(a.type)){
-   g.append(el('rect',{x:a.x-13,y:a.y-13,width:26,height:26,rx:4,fill:a.type==='smart'?'#b9e6ff':'white',stroke:'#168bd0','stroke-width':3}));
-   text(a.x,a.y+5,a.type==='switch'?'S':a.type==='parallel'?'P':a.type==='intermediate'?'I':'Wi',11);
-  }
-  if(a.type==='label')text(a.x,a.y,a.name||'Cômodo',18);
-  if(a.type==='circuit')g.append(line(a.x,a.y,a.x2,a.y2,'#e33',3));
-  if(a.name && a.type!=='label')text(a.x,a.y+30,a.name,11);
-  if(a.circuit)text(a.x,a.y-22,a.circuit,12);
-  layer.append(g);
- });
-}
-function el(tag,attrs){
- const n=document.createElementNS('http://www.w3.org/2000/svg',tag);
- Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v));return n;
-}
-document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{
- tool=b.dataset.tool;
- document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b));
-});
-svg.addEventListener('pointerdown',e=>{
- const p=point(e),g=e.target.closest('.item');
- if(tool==='select' && g){
-  selected=Number(g.dataset.id);const a=items.find(x=>x.id===selected);
-  $('selectedName').textContent=a.type;
-  $('itemName').value=a.name||'';$('itemCircuit').value=a.circuit||'';
-  snapshot();drag={id:selected,x:p.x,y:p.y,ox:a.x,oy:a.y,ox2:a.x2,oy2:a.y2};
-  render();return;
+ try{
+  localStorage.setItem("smartHomeRD_v3",JSON.stringify(items));
+ }catch(e){
+  statusEl.textContent="Erro ao salvar projeto.";
  }
- if(tool==='select' && !g){selected=null;render();return;}
- if(tool==='erase'){
-  if(g){snapshot();items=items.filter(a=>a.id!==Number(g.dataset.id));selected=null;render();save();}
+}
+
+function backup(){
+ history.push(JSON.stringify(items));
+ if(history.length>50)history.shift();
+}
+
+function point(e){
+ const p=svg.createSVGPoint();
+ p.x=e.clientX;
+ p.y=e.clientY;
+ const matrix=svg.getScreenCTM();
+ if(!matrix)return {x:0,y:0};
+ const q=p.matrixTransform(matrix.inverse());
+ return {
+  x:Math.max(0,Math.min(1000,Math.round(q.x/10)*10)),
+  y:Math.max(0,Math.min(700,Math.round(q.y/10)*10))
+ };
+}
+
+function element(tag,attrs){
+ const el=document.createElementNS(NS,tag);
+ Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
+ return el;
+}
+
+function drawItem(it,index){
+ const g=element("g",{"data-index":index});
+ const color=selected===index?"#e69a32":"#17232e";
+
+ if(it.type==="wall"){
+  g.appendChild(element("line",{
+   x1:it.x1,y1:it.y1,x2:it.x2,y2:it.y2,
+   stroke:color,"stroke-width":8,"stroke-linecap":"square"
+  }));
+ }
+
+ if(it.type==="door"){
+  g.appendChild(element("line",{
+   x1:it.x,y1:it.y,x2:it.x+it.w,y2:it.y,
+   stroke:"#ffffff","stroke-width":10
+  }));
+  g.appendChild(element("path",{
+   d:`M${it.x} ${it.y} A${it.w} ${it.w} 0 0 1 ${it.x+it.w} ${it.y+it.w}`,
+   fill:"none",stroke:color,"stroke-width":2
+  }));
+ }
+
+ if(it.type==="window"){
+  g.appendChild(element("line",{
+   x1:it.x,y1:it.y,x2:it.x+it.w,y2:it.y,
+   stroke:"#168bc0","stroke-width":8
+  }));
+ }
+
+ if(it.type==="spot" || it.type==="square"){
+  const shape=it.type==="spot"?"circle":"rect";
+  const attrs=it.type==="spot"
+   ?{cx:it.x,cy:it.y,r:14}
+   :{x:it.x-14,y:it.y-14,width:28,height:28};
+  g.appendChild(element(shape,{
+   ...attrs,fill:"#fff1c5",stroke:"#d68a19","stroke-width":3
+  }));
+  const t=element("text",{
+   x:it.x,y:it.y+5,"text-anchor":"middle",
+   "font-size":15,fill:"#9b650c"
+  });
+  t.textContent="✦";
+  g.appendChild(t);
+ }
+
+ if(it.type==="panel"){
+  g.appendChild(element("rect",{
+   x:it.x-25,y:it.y-25,width:50,height:50,
+   fill:"#eaf5ff",stroke:"#2776b8","stroke-width":3
+  }));
+ }
+
+ if(it.type==="pendant"){
+  g.appendChild(element("line",{
+   x1:it.x,y1:it.y-25,x2:it.x,y2:it.y,
+   stroke:color,"stroke-width":2
+  }));
+  g.appendChild(element("circle",{
+   cx:it.x,cy:it.y+7,r:13,
+   fill:"#ffe7a5",stroke:"#b77a12","stroke-width":2
+  }));
+ }
+
+ if(it.type.startsWith("led")){
+  g.appendChild(element("polyline",{
+   points:it.points.map(p=>p.join(",")).join(" "),
+   fill:"none",stroke:"#f59e0b",
+   "stroke-width":7,"stroke-linecap":"round",
+   "stroke-linejoin":"round"
+  }));
+ }
+
+ if(it.type==="room"){
+  const t=element("text",{
+   x:it.x,y:it.y,"text-anchor":"middle",
+   "font-size":22,"font-weight":"bold",fill:"#344452"
+  });
+  t.textContent=it.name;
+  g.appendChild(t);
+ }
+
+ if(it.name && it.type!=="room"){
+  const t=element("text",{
+   x:it.x+18,y:it.y-17,"font-size":12,fill:"#344452"
+  });
+  t.textContent=it.name;
+  g.appendChild(t);
+ }
+
+ return g;
+}
+
+function render(){
+ layer.innerHTML="";
+ items.forEach((it,i)=>layer.appendChild(drawItem(it,i)));
+ document.getElementById("count").textContent=
+  items.length+" elementos na planta";
+ save();
+}
+
+function setTool(name){
+ tool=name;
+ selected=null;
+ document.querySelectorAll("[data-tool]").forEach(b=>{
+  b.classList.toggle("active",b.dataset.tool===name);
+ });
+ statusEl.textContent="Ferramenta selecionada: "+name;
+ render();
+}
+
+document.querySelectorAll("[data-tool]").forEach(b=>{
+ b.addEventListener("click",()=>setTool(b.dataset.tool));
+});
+
+function addObject(p){
+ if(tool==="room"){
+  const name=prompt("Nome do cômodo:");
+  if(!name)return;
+  backup();
+  items.push({type:"room",x:p.x,y:p.y,name});
+ }
+ else if(tool==="door" || tool==="window"){
+  backup();
+  items.push({
+   type:tool,x:p.x,y:p.y,w:tool==="door"?45:60
+  });
+ }
+ else if(["spot","square","panel","pendant"].includes(tool)){
+  backup();
+  items.push({type:tool,x:p.x,y:p.y,name:""});
+ }
+ else if(tool==="led"){
+  backup();
+  items.push({
+   type:"led",x:p.x,y:p.y,w:100,
+   points:[[p.x,p.y],[p.x+100,p.y]]
+  });
+ }
+ else if(tool==="ledL"){
+  backup();
+  items.push({
+   type:"ledL",x:p.x,y:p.y,
+   points:[[p.x,p.y],[p.x+100,p.y],[p.x+100,p.y+100]]
+  });
+ }
+ else if(tool==="ledU"){
+  backup();
+  items.push({
+   type:"ledU",x:p.x,y:p.y,
+   points:[
+    [p.x,p.y],[p.x,p.y+100],
+    [p.x+100,p.y+100],[p.x+100,p.y],
+    [p.x+200,p.y]
+   ]
+  });
+ }
+ render();
+ statusEl.textContent="Elemento adicionado.";
+}
+
+function moveItem(it,dx,dy){
+ if(it.x!==undefined){it.x+=dx;it.y+=dy}
+ if(it.x1!==undefined){
+  it.x1+=dx;it.y1+=dy;
+  it.x2+=dx;it.y2+=dy;
+ }
+ if(it.points){
+  it.points=it.points.map(p=>[p[0]+dx,p[1]+dy]);
+ }
+}
+
+svg.addEventListener("pointerdown",e=>{
+ const p=point(e);
+ const target=e.target.closest("[data-index]");
+
+ if(target){
+  const index=Number(target.getAttribute("data-index"));
+
+  if(tool==="erase"){
+   backup();
+   items.splice(index,1);
+   selected=null;
+   render();
+   statusEl.textContent="Elemento apagado.";
+   return;
+  }
+
+  if(tool==="select"){
+   selected=index;
+   moving=index;
+   lastPoint=p;
+   backup();
+   const it=items[index];
+   document.getElementById("objectName").value=it.name||"";
+   document.getElementById("objectLength").value=
+    it.w?Number(it.w/SCALE).toFixed(2):"";
+   render();
+   svg.setPointerCapture(e.pointerId);
+
+   if(it.type==="room"){
+    const name=prompt("Editar nome do cômodo:",it.name);
+    if(name!==null && name.trim()){
+     it.name=name.trim();
+     render();
+    }
+   }
+   return;
+  }
+ }
+
+ if(tool==="wall"){
+  drawing=true;
+  start=p;
+  preview.innerHTML="";
+  svg.setPointerCapture(e.pointerId);
+ }else if(tool!=="select" && tool!=="erase"){
+  addObject(p);
+ }else{
+  selected=null;
+  render();
+ }
+});
+
+svg.addEventListener("pointermove",e=>{
+ const p=point(e);
+
+ if(moving!==null){
+  const dx=p.x-lastPoint.x;
+  const dy=p.y-lastPoint.y;
+  moveItem(items[moving],dx,dy);
+  lastPoint=p;
+  render();
   return;
  }
- if(tool==='wall'||tool==='circuit'){
-  drawing={type:tool,x:p.x,y:p.y};svg.setPointerCapture(e.pointerId);return;
+
+ if(drawing && start){
+  preview.innerHTML="";
+  preview.appendChild(element("line",{
+   x1:start.x,y1:start.y,x2:p.x,y2:p.y,
+   stroke:"#e69a32","stroke-width":8
+  }));
  }
- if(tool==='door')add('door',p.x,p.y,p.x+55,p.y);
- else add(tool,p.x,p.y);
 });
-svg.addEventListener('pointermove',e=>{
+
+svg.addEventListener("pointerup",e=>{
+ if(moving!==null){
+  moving=null;
+  save();
+  return;
+ }
+
+ if(!drawing || !start)return;
+
  const p=point(e);
- if(drag){
-  const a=items.find(x=>x.id===drag.id);if(!a)return;
-  const dx=p.x-drag.x,dy=p.y-drag.y;
-  a.x=drag.ox+dx;a.y=drag.oy+dy;a.x2=drag.ox2+dx;a.y2=drag.oy2+dy;render();
+ drawing=false;
+ preview.innerHTML="";
+
+ if(start.x!==p.x || start.y!==p.y){
+  items.push({
+   type:"wall",
+   x1:start.x,y1:start.y,
+   x2:p.x,y2:p.y
+  });
+  render();
+  const length=Math.hypot(p.x-start.x,p.y-start.y)/SCALE;
+  statusEl.textContent="Parede: "+length.toFixed(2)+" metros.";
  }
- if(drawing){
-  render();layer.append(el('line',{x1:drawing.x,y1:drawing.y,x2:p.x,y2:p.y,stroke:drawing.type==='wall'?'#222':'#e33','stroke-width':drawing.type==='wall'?8:3,'stroke-dasharray':drawing.type==='wall'?'':'8 5'}));
+ start=null;
+});
+
+svg.addEventListener("pointercancel",()=>{
+ drawing=false;
+ moving=null;
+ start=null;
+ preview.innerHTML="";
+});
+
+document.getElementById("apply").onclick=()=>{
+ if(selected===null){
+  alert("Selecione um objeto primeiro.");
+  return;
  }
-});
-svg.addEventListener('pointerup',e=>{
- const p=point(e);
- if(drag){drag=null;save();}
- if(drawing){items.push(make(drawing.type,drawing.x,drawing.y,p.x,p.y));drawing=null;render();save();}
-});
-$('apply').onclick=()=>{
- const a=items.find(x=>x.id===selected);if(!a)return;
- snapshot();a.name=$('itemName').value;a.circuit=$('itemCircuit').value;render();save();
+
+ const it=items[selected];
+ it.name=document.getElementById("objectName").value;
+ const size=Number(document.getElementById("objectLength").value);
+
+ if(size>0 && it.w){
+  it.w=size*SCALE;
+  if(it.points){
+   const first=it.points[0];
+   const last=it.points[it.points.length-1];
+   const current=Math.hypot(last[0]-first[0],last[1]-first[1]);
+   if(current>0){
+    const ratio=it.w/current;
+    it.points=it.points.map(p=>[
+     first[0]+(p[0]-first[0])*ratio,
+     first[1]+(p[1]-first[1])*ratio
+    ]);
+   }
+  }
+ }
+
+ render();
+ statusEl.textContent="Alterações aplicadas.";
 };
-$('delete').onclick=()=>{
- if(!selected)return;snapshot();items=items.filter(x=>x.id!==selected);selected=null;render();save();
+
+document.getElementById("undo").onclick=()=>{
+ if(!history.length){
+  statusEl.textContent="Não há ações para desfazer.";
+  return;
+ }
+ items=JSON.parse(history.pop());
+ selected=null;
+ render();
+ statusEl.textContent="Ação desfeita.";
 };
-$('undo').onclick=undo;
-$('clear').onclick=()=>{
- if(confirm('Apagar toda a planta? Faça uma cópia antes.')){snapshot();items=[];selected=null;render();save();}
+
+document.getElementById("clear").onclick=()=>{
+ if(!confirm("Deseja apagar toda a planta?"))return;
+ backup();
+ items=[];
+ selected=null;
+ render();
 };
-$('export').onclick=()=>{
- const blob=new Blob([JSON.stringify({version:3,items},null,2)],{type:'application/json'});
- const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='smart-home-rd-backup.json';a.click();URL.revokeObjectURL(a.href);
+
+document.getElementById("export").onclick=()=>{
+ const data=JSON.stringify({
+  app:"Smart Home RD",version:3,scale:SCALE,items
+ },null,2);
+ const blob=new Blob([data],{type:"application/json"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download="smart-home-rd-projeto.json";
+ a.click();
+ URL.revokeObjectURL(url);
 };
-$('import').onclick=()=>$('file').click();
-$('file').onchange=async e=>{
- const f=e.target.files[0];if(!f)return;
+
+document.getElementById("import").onchange=async e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+
  try{
-  const data=JSON.parse(await f.text());
-  const arr=Array.isArray(data)?data:data.items;
-  if(!Array.isArray(arr))throw Error('Formato inválido');
-  snapshot();items=arr;selected=null;render();save();alert('Projeto importado!');
- }catch(err){alert('Não foi possível importar esse arquivo JSON.');}
- e.target.value='';
+  const data=JSON.parse(await file.text());
+  if(!Array.isArray(data.items))throw new Error("Inválido");
+
+  if(confirm("Substituir a planta atual?")){
+   backup();
+   items=data.items;
+   selected=null;
+   render();
+  }
+ }catch(err){
+  alert("Arquivo JSON inválido.");
+ }
+ e.target.value="";
 };
-try{items=JSON.parse(localStorage.getItem('smartHomeRD_v3')||'[]');}catch(e){items=[];}
+
+// Navegação entre planta e automação
+document.getElementById("showPlan").onclick=()=>{
+ document.getElementById("planSection").hidden=false;
+ document.getElementById("autoSection").hidden=true;
+ document.getElementById("showPlan").classList.add("active");
+ document.getElementById("showAuto").classList.remove("active");
+};
+
+document.getElementById("showAuto").onclick=()=>{
+ document.getElementById("planSection").hidden=true;
+ document.getElementById("autoSection").hidden=false;
+ document.getElementById("showAuto").classList.add("active");
+ document.getElementById("showPlan").classList.remove("active");
+};
+
+// Integração via backend seguro
+document.getElementById("loadDevices").onclick=async()=>{
+ const base=document.getElementById("apiUrl").value.trim().replace(/\/$/,"");
+ const connection=document.getElementById("connection");
+ const container=document.getElementById("devices");
+
+ if(!base){
+  connection.textContent="Informe o endereço do backend.";
+  return;
+ }
+
+ connection.textContent="Conectando...";
+ try{
+  const response=await fetch(base+"/devices");
+  if(!response.ok)throw new Error("HTTP "+response.status);
+
+  const data=await response.json();
+  const devices=Array.isArray(data)?data:data.devices;
+
+  if(!Array.isArray(devices))throw new Error("Resposta inválida");
+
+  container.innerHTML="";
+
+  devices.forEach(device=>{
+   const card=document.createElement("div");
+   card.className="device";
+
+   const title=document.createElement("h3");
+   title.textContent=device.name||"Dispositivo";
+   const state=document.createElement("p");
+   state.textContent="Estado: "+(device.online?"Online":"Não informado");
+
+   const badge=document.createElement("span");
+   badge.className="badge";
+   badge.textContent=device.id||device.device_id||"Dispositivo";
+
+   const button=document.createElement("button");
+   button.textContent="Ligar / desligar";
+   button.onclick=()=>sendCommand(base,device);
+
+   card.append(title,state,badge,document.createElement("br"),button);
+   container.appendChild(card);
+  });
+
+  connection.textContent=devices.length+" dispositivos recebidos.";
+ }catch(error){
+  connection.textContent="Falha: "+error.message+
+   ". Verifique o backend, a API e o CORS.";
+ }
+};
+
+async function sendCommand(base,device){
+ const id=device.id||device.device_id;
+ if(!id)return alert("Dispositivo sem identificador.");
+
+ const value=confirm("OK para ligar. Cancelar para desligar.");
+ try{
+  const response=await fetch(base+"/devices/"+encodeURIComponent(id)+"/commands",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({command:"switch",value})
+  });
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  alert("Comando enviado ao backend.");
+ }catch(error){
+  alert("Não foi possível enviar o comando: "+error.message);
+ }
+}
+
+// Recuperar projeto salvo
+try{
+ const saved=localStorage.getItem("smartHomeRD_v3");
+ if(saved){
+  const parsed=JSON.parse(saved);
+  if(Array.isArray(parsed))items=parsed;
+ }
+}catch(error){
+ items=[];
+}
 render();
 </script>
 </body>
 </html>
-
-
