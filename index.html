@@ -5,6 +5,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#101820">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Smart Home RD">
 <title>Smart Home RD</title>
 <style>
 *{box-sizing:border-box}
@@ -668,5 +672,16 @@ try{
 }
 render();
 </script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(() => console.log("Smart Home RD preparado para instalação!"))
+      .catch(error => console.error("Erro no Service Worker:", error));
+  });
+}
+</script>
 </body>
 </html>
+
